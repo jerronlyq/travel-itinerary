@@ -273,7 +273,6 @@
 
   function bookingCard(b) {
     const pending = !b.start && !b.cost && !b.status;
-    const link = safeUrl(b.link);
     return `
       <article class="card booking ${pending ? "is-pending" : ""}">
         <div class="tl__top"><h3>${esc(b.provider || b.type)}</h3>${pending ? `<span class="badge badge--none">Details pending</span>` : badge(b.status)}</div>
@@ -286,8 +285,45 @@
           ${b.cancelBy ? `<div><dt>Cancel by</dt><dd>${esc(b.cancelBy)}</dd></div>` : ""}
         </dl>
         ${b.notes ? `<p class="note prewrap">📝 ${esc(b.notes)}</p>` : ""}
-        ${link ? `<div class="actions"><a class="btn btn--ghost" href="${esc(link)}" target="_blank" rel="noopener">Open link ↗</a></div>` : b.link ? `<p class="tiny muted">Ref: ${esc(b.link)}</p>` : ""}
+        ${bookingLinks(b.link)}
       </article>`;
+  }
+
+  // The Link / Email Ref cell may hold several links (Drive PDFs, websites) plus plain text like an email subject.
+  function bookingLinks(cell) {
+    const urls = (String(cell || "").match(/https?:\/\/[^\s,]+/g) || []).filter(safeUrl);
+    const rest = String(cell || "").replace(/https?:\/\/[^\s,]+/g, "").replace(/^[\s,]+|[\s,]+$/g, "");
+    const isPdf = (u) => /drive\.google\.com\/(file|open|uc)|\.pdf([?#]|$)/i.test(u);
+    const pdfCount = urls.filter(isPdf).length;
+    let n = 0;
+    const buttons = urls.map((u) => {
+      if (isPdf(u)) {
+        n++;
+        return `<a class="btn btn--pdf" href="${esc(u)}" target="_blank" rel="noopener">📄 View PDF${pdfCount > 1 ? " " + n : ""}</a>`;
+      }
+      const label = /docs\.google\.com\/document/i.test(u) ? "📄 Open doc" : "Open link ↗";
+      return `<a class="btn btn--ghost" href="${esc(u)}" target="_blank" rel="noopener">${label}</a>`;
+    }).join("");
+    return (buttons ? `<div class="actions">${buttons}</div>` : "") + (rest ? `<p class="tiny muted ref">Ref: ${esc(rest)}</p>` : "");
+  }
+
+  // ---------- theme ----------
+  const darkQuery = window.matchMedia("(prefers-color-scheme: dark)");
+  function themePref() {
+    try { const t = localStorage.getItem("theme"); return t === "light" || t === "dark" ? t : "system"; } catch (_) { return "system"; }
+  }
+  function applyTheme() {
+    const pref = themePref();
+    const mode = pref === "system" ? (darkQuery.matches ? "dark" : "light") : pref;
+    const root = document.documentElement;
+    if (pref === "system") delete root.dataset.theme; else root.dataset.theme = pref;
+    root.dataset.mode = mode;
+    document.querySelector('meta[name="theme-color"]').content = mode === "dark" ? "#0c1626" : "#f1f5fb";
+    document.querySelectorAll("[data-theme-choice]").forEach((b) => b.classList.toggle("is-active", b.dataset.themeChoice === pref));
+  }
+  function setTheme(pref) {
+    try { pref === "system" ? localStorage.removeItem("theme") : localStorage.setItem("theme", pref); } catch (_) {}
+    applyTheme();
   }
 
   function viewSettings() {
@@ -295,7 +331,7 @@
     const first = !src;
     const trip = state.data && state.data.overview;
     return `
-      <header class="dayhead"><h1>${first ? "Welcome 🌿" : "Settings"}</h1></header>
+      <header class="dayhead"><h1>${first ? "Welcome 🌊" : "Settings"}</h1></header>
       ${first ? `<p class="lead">Paste the link to your trip's Google Sheet to get started. It's saved only on this device. To plan another trip, just swap the link here.</p>` : ""}
       ${src ? `
         <section class="card current">
@@ -318,6 +354,12 @@
           <li>The sheet needs tabs named <b>Overview</b>, <b>Itinerary</b> and <b>Bookings</b>, as in your trip template.</li>
           <li>Edit plans in the sheet anytime and tap ↻ here to refresh.</li>
         </ol>
+      </section>
+      <section class="card appearance">
+        <p class="eyebrow">Appearance</p>
+        <div class="segmented" role="group" aria-label="Appearance">
+          ${["system", "light", "dark"].map((t) => `<button type="button" data-theme-choice="${t}" class="${themePref() === t ? "is-active" : ""}">${t === "system" ? "Auto" : t[0].toUpperCase() + t.slice(1)}</button>`).join("")}
+        </div>
       </section>
       ${src ? `<button class="btn btn--text danger" id="forget">Remove link from this device</button>` : ""}`;
   }
@@ -412,6 +454,15 @@
     render();
   });
   document.getElementById("refresh").addEventListener("click", refresh);
+  document.getElementById("theme-toggle").addEventListener("click", () => {
+    setTheme(document.documentElement.dataset.mode === "dark" ? "light" : "dark");
+  });
+  document.addEventListener("click", (e) => {
+    const b = e.target.closest("[data-theme-choice]");
+    if (b) setTheme(b.dataset.themeChoice);
+  });
+  darkQuery.addEventListener("change", applyTheme);
+  applyTheme();
   window.addEventListener("hashchange", () => { render(); window.scrollTo(0, 0); });
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "visible" && state.data && Date.now() - state.data.fetchedAt > 5 * 60000) refresh();

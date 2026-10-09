@@ -1,39 +1,62 @@
+/* Theme: follows the device unless the user picks Light/Dark (sets data-theme on <html>). */
 :root {
-  --bg: #f6f1e9;          /* warm sand */
-  --surface: #fffdf9;
-  --surface-2: #efe8dc;
-  --ink: #1f2b2a;
-  --muted: #7a7f78;
-  --line: #e6ddcf;
-  --accent: #2f6f6a;      /* deep sea teal */
-  --accent-soft: #dcebe7;
-  --warm: #c8734f;        /* terracotta */
-  --warm-soft: #f6e2d6;
-  --good: #3d7d5a;
-  --good-soft: #dfeee3;
-  --shadow: 0 1px 2px rgba(60, 45, 20, .05), 0 6px 20px rgba(60, 45, 20, .06);
+  --bg: #f1f5fb;          /* morning sky */
+  --surface: #ffffff;
+  --surface-2: #e7eef8;
+  --ink: #12233b;
+  --muted: #67788f;
+  --line: #dce5f1;
+  --accent: #2563a6;      /* ocean blue */
+  --accent-soft: #dde9f7;
+  --on-accent: #ffffff;
+  --warm: #d9694c;        /* coral, for "pays" and highlights */
+  --warm-soft: #fbe5de;
+  --good: #23806a;
+  --good-soft: #dbf1ea;
+  --hero-glow: rgba(37, 99, 166, .10);
+  --shadow: 0 1px 2px rgba(18, 35, 59, .04), 0 6px 20px rgba(18, 35, 59, .06);
   --radius: 18px;
   --serif: "Fraunces", Georgia, serif;
   --sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   color-scheme: light;
 }
 @media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #14201f;
-    --surface: #1c2a29;
-    --surface-2: #243433;
-    --ink: #ecebe4;
-    --muted: #96a19d;
-    --line: #2c3d3b;
-    --accent: #7cc0b5;
-    --accent-soft: #23403c;
-    --warm: #e39a78;
-    --warm-soft: #3f2c24;
-    --good: #8fcaa6;
-    --good-soft: #233a2e;
+  :root:not([data-theme="light"]) {
+    --bg: #0c1626;        /* night sea */
+    --surface: #132239;
+    --surface-2: #1b2d48;
+    --ink: #e6edf7;
+    --muted: #8ea2be;
+    --line: #22375a;
+    --accent: #7db3ef;
+    --accent-soft: #1c355a;
+    --on-accent: #0c1626;
+    --warm: #f09a80;
+    --warm-soft: #3c2724;
+    --good: #7fd1b3;
+    --good-soft: #163a32;
+    --hero-glow: rgba(125, 179, 239, .10);
     --shadow: none;
     color-scheme: dark;
   }
+}
+:root[data-theme="dark"] {
+  --bg: #0c1626;
+  --surface: #132239;
+  --surface-2: #1b2d48;
+  --ink: #e6edf7;
+  --muted: #8ea2be;
+  --line: #22375a;
+  --accent: #7db3ef;
+  --accent-soft: #1c355a;
+  --on-accent: #0c1626;
+  --warm: #f09a80;
+  --warm-soft: #3c2724;
+  --good: #7fd1b3;
+  --good-soft: #163a32;
+  --hero-glow: rgba(125, 179, 239, .10);
+  --shadow: none;
+  color-scheme: dark;
 }
 
 * { box-sizing: border-box; }
@@ -141,7 +164,7 @@ svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width:
 .updated { text-align: center; color: var(--muted); font-size: 12px; margin-top: 36px; }
 
 /* ---------- overview ---------- */
-.hero { padding: 20px 2px 8px; }
+.hero { padding: 20px 2px 8px; margin: 0 -16px; padding-left: 18px; padding-right: 18px; background: radial-gradient(120% 90% at 100% 0%, var(--hero-glow), transparent 60%); }
 .hero__title { font-family: var(--serif); font-size: 38px; line-height: 1.1; margin: 6px 0 8px; letter-spacing: -.01em; }
 .hero__dates { color: var(--muted); }
 .count { display: flex; align-items: baseline; gap: 8px; margin-top: 18px; }
@@ -194,8 +217,7 @@ svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width:
 }
 .daytab small { font-weight: 500; font-size: 11px; }
 .daytab.is-today { border-color: var(--accent); }
-.daytab.is-active { background: var(--accent); color: #fff; border-color: var(--accent); }
-@media (prefers-color-scheme: dark) { .daytab.is-active { color: #10201e; } }
+.daytab.is-active { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
 
 .dayhead { padding: 14px 2px 16px; display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
 .dayhead h1 { font-family: var(--serif); font-size: 26px; line-height: 1.2; }
@@ -239,10 +261,22 @@ svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width:
 .linkform input:focus { outline: 2px solid var(--accent); outline-offset: 1px; border-color: transparent; }
 .formmsg:empty { display: none; }
 .formmsg.is-error { color: var(--warm); font-size: 14px; }
-.btn--solid { justify-content: center; padding: 13px 16px; background: var(--accent); color: var(--surface); font-weight: 600; }
+.btn--solid { justify-content: center; padding: 13px 16px; background: var(--accent); color: var(--on-accent); font-weight: 600; }
 .btn--solid:disabled { opacity: .6; }
 .help { margin-top: 28px; }
 .help ol { margin: 0; padding-left: 20px; color: var(--muted); font-size: 14px; }
 .help li { margin-bottom: 8px; }
 .help b { color: var(--ink); font-weight: 600; }
 .danger { color: var(--warm); margin: 20px auto 0; display: block; }
+
+/* ---------- theme toggle ---------- */
+.icon-sun { display: none; }
+[data-mode="dark"] .icon-sun { display: block; }
+[data-mode="dark"] .icon-moon { display: none; }
+.segmented { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; padding: 4px; margin-top: 10px; border-radius: 14px; background: var(--surface-2); }
+.segmented button { padding: 9px 0; border: 0; border-radius: 10px; background: transparent; color: var(--muted); font: 500 14px var(--sans); cursor: pointer; }
+.segmented button.is-active { background: var(--surface); color: var(--ink); box-shadow: 0 1px 3px rgba(0, 0, 0, .08); }
+.appearance { margin-top: 16px; }
+
+/* ---------- booking documents ---------- */
+.btn--pdf { background: var(--warm-soft); color: var(--warm); }
