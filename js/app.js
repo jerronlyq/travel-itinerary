@@ -217,11 +217,28 @@
 
     return `
       <div class="daytabs" role="tablist">${tabs}</div>
-      <header class="dayhead">
+      <header class="dayhead dayhead--stack">
         <h1>${d ? esc(d.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" })) : `Day ${day}`}</h1>
-        <p class="muted">${items.length ? `${items.length} ${items.length === 1 ? "plan" : "plans"}` : ""}</p>
+        ${items.length ? `<div class="dayhead__bar">
+          <p class="muted">${items.length} ${items.length === 1 ? "plan" : "plans"}</p>
+          <button type="button" class="btn btn--chip" data-toggle-all aria-pressed="${!!state.expandAll}">${toggleAllLabel(state.expandAll)}</button>
+        </div>` : ""}
       </header>
       ${list}`;
+  }
+
+  const chevron = (up) => `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${up ? "M7 14l5-5 5 5" : "M7 10l5 5 5-5"}"/></svg>`;
+  const toggleAllLabel = (open) => (open ? `${chevron(true)}Collapse all` : `${chevron(false)}Expand all`);
+
+  // Keeps the Expand/Collapse all button in sync after cards are opened or closed one by one.
+  function syncToggleAll() {
+    const btn = $view.querySelector("[data-toggle-all]");
+    if (!btn) return;
+    const cards = [...$view.querySelectorAll(".tl__card")];
+    const anyOpen = cards.some((c) => c.open);
+    state.expandAll = cards.length > 0 && cards.every((c) => c.open);
+    btn.innerHTML = toggleAllLabel(anyOpen);
+    btn.setAttribute("aria-pressed", String(anyOpen));
   }
 
   function itemCard(i) {
@@ -234,7 +251,7 @@
     return `
       <li class="tl">
         <div class="tl__time">${esc(i.time) || "—"}</div>
-        <details class="card tl__card">
+        <details class="card tl__card"${state.expandAll ? " open" : ""}>
           <summary>
             <div class="tl__top"><span class="chip">${catIcon(i.category)} ${esc(i.category || "Plan")}</span>${badge(i.status)}</div>
             <h3>${esc(i.activity)}</h3>
@@ -460,7 +477,15 @@
   document.addEventListener("click", (e) => {
     const b = e.target.closest("[data-theme-choice]");
     if (b) setTheme(b.dataset.themeChoice);
+    if (e.target.closest("[data-toggle-all]")) {
+      const cards = [...$view.querySelectorAll(".tl__card")];
+      const open = !cards.some((c) => c.open);
+      cards.forEach((c) => (c.open = open));
+      syncToggleAll();
+    }
   });
+  // <details> "toggle" doesn't bubble, so listen in the capture phase.
+  document.addEventListener("toggle", (e) => e.target.matches?.(".tl__card") && syncToggleAll(), true);
   darkQuery.addEventListener("change", applyTheme);
   applyTheme();
   window.addEventListener("hashchange", () => { render(); window.scrollTo(0, 0); });
